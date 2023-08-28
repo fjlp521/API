@@ -1,5 +1,7 @@
 package com.only.apibackend.controller;
 
+import cn.hutool.http.HttpResponse;
+import cn.hutool.http.HttpStatus;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.gson.Gson;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**
@@ -218,8 +221,8 @@ public class InterfaceInfoController {
 
         //接口是否能调用
         com.only.apiclientsdk.model.User user = new com.only.apiclientsdk.model.User("only");
-        String usernameByPost = apiClient.getUsernameByPost(user);
-        if (StringUtils.isBlank(usernameByPost)) {
+        HttpResponse response = apiClient.getUsernameByPost(user);
+        if (response.getStatus() != HttpStatus.HTTP_OK) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "接口验证失败");
         }
 
@@ -265,7 +268,7 @@ public class InterfaceInfoController {
      */
     @PostMapping("/invoke")
     public BaseResponse<Object> invokeInterfaceInfo(@RequestBody InterfaceInfoInvokeRequest interfaceInfoInvokeRequest,
-                                                    HttpServletRequest request) {
+                                                    HttpServletRequest request, HttpServletResponse response) {
         //判断参数是否为空
         if (interfaceInfoInvokeRequest == null || interfaceInfoInvokeRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -289,8 +292,15 @@ public class InterfaceInfoController {
         Gson gson = new Gson();
         com.only.apiclientsdk.model.User user = gson.fromJson(userRequestParams, com.only.apiclientsdk.model.User.class);
         System.out.println(user);
-        String usernameByPost = new ApiClient(loginUser.getAccessKey(), loginUser.getSecretKey()).getUsernameByPost(user);
-        return ResultUtils.success(usernameByPost);
+        HttpResponse interfaceResponse = new ApiClient(loginUser.getAccessKey(), loginUser.getSecretKey()).getUsernameByPost(user);
+//        return ResultUtils.success(response.getStatus(), );
+//        return ResultUtils.
+//        response.setStatus(interfaceResponse.getStatus());
+        if (interfaceResponse.getStatus() == HttpStatus.HTTP_OK) {
+            return ResultUtils.success(interfaceResponse.body());
+        } else {
+            return ResultUtils.error(interfaceResponse.getStatus(), interfaceResponse.body());
+        }
     }
 
     // endregion

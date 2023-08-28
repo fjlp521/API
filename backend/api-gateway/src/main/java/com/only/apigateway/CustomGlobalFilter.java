@@ -1,5 +1,6 @@
 package com.only.apigateway;
 
+import com.google.common.util.concurrent.RateLimiter;
 import com.only.apiclientsdk.utils.SignUtils;
 import com.only.apicommon.model.entity.InterfaceInfo;
 import com.only.apicommon.model.entity.User;
@@ -29,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
@@ -47,6 +49,8 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
 
     public static final String INTERFACE_HOST = "http://localhost:8123";
 
+    public static final RateLimiter rateLimiter = RateLimiter.create(1, 3, TimeUnit.MINUTES);
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         // 1. 请求日志
@@ -62,6 +66,10 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
         log.info("请求目的地址：" + request.getRemoteAddress());
         ServerHttpResponse response = exchange.getResponse();
 
+        // todo 限流
+        if (!rateLimiter.tryAcquire()) {
+            return handleNoAuth(response);
+        }
         // 2. 访问控制 - 黑白名单
         if (!IP_WHITE_LIST.contains(sourceAddr)) {
             return handleNoAuth(response);

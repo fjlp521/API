@@ -50,15 +50,16 @@ public class ApiClient {
         return res;
     }
 
-    public String getUsernameByPost(User user) {
+    public HttpResponse getUsernameByPost(User user) {
         String json = JSONUtil.toJsonStr(user);
         HttpResponse httpResponse = HttpRequest.post(GATEWAY_HOST + "/api/name/user")
                 .addHeaders(getHeaderMap(json))
                 .body(json)
                 .execute();
-        System.out.println(httpResponse.getStatus());
-        String res = httpResponse.body();
-        System.out.println(res);
-        return res;
+//        System.out.println(httpResponse.getStatus());
+//        String res = httpResponse.body();
+//        System.out.println(res);
+//        return res;
+        return httpResponse;
     }
 }
